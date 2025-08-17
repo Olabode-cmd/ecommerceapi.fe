@@ -4,6 +4,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import { useLogin } from '../../services/auth';
 import { loginSchema, type LoginFormData } from '../../schemas/auth';
+import { sanitizeFormData } from '../../utils/sanitize';
 import Input from '../../components/ui/Input';
 import Button from '../../components/ui/Button';
 import auth from '../../assets/images/auth.jpg';
@@ -12,13 +13,15 @@ export default function Login() {
   const navigate = useNavigate();
   const loginMutation = useLogin();
   
-  const { register, handleSubmit, formState: { errors } } = useForm<LoginFormData>({
-    resolver: zodResolver(loginSchema)
+  const { register, handleSubmit, formState: { errors, isValid } } = useForm<LoginFormData>({
+    resolver: zodResolver(loginSchema),
+    mode: 'onChange'
   });
 
   const onSubmit = (data: LoginFormData) => {
+    const sanitizedData = sanitizeFormData(data);
     loginMutation.mutate(
-      data,
+      sanitizedData,
       {
         onSuccess: (response) => {
           const { accessToken, refreshToken } = response.data;
@@ -72,7 +75,7 @@ export default function Login() {
                 type="submit"
                 variant="primary"
                 className="w-full"
-                disabled={loginMutation.isPending}
+                disabled={!isValid || loginMutation.isPending}
               >
                 {loginMutation.isPending ? 'Signing in...' : 'Sign in'}
               </Button>

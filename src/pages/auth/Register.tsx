@@ -4,6 +4,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import { useRegister } from '../../services/auth';
 import { registerSchema, type RegisterFormData } from '../../schemas/auth';
+import { sanitizeFormData } from '../../utils/sanitize';
 import Input from '../../components/ui/Input';
 import Button from '../../components/ui/Button';
 import auth2 from '../../assets/images/auth2.jpg';
@@ -12,13 +13,15 @@ export default function Register() {
   const navigate = useNavigate();
   const registerMutation = useRegister();
   
-  const { register, handleSubmit, formState: { errors } } = useForm<RegisterFormData>({
-    resolver: zodResolver(registerSchema)
+  const { register, handleSubmit, formState: { errors, isValid } } = useForm<RegisterFormData>({
+    resolver: zodResolver(registerSchema),
+    mode: 'onChange'
   });
 
   const onSubmit = (data: RegisterFormData) => {
+    const sanitizedData = sanitizeFormData(data);
     registerMutation.mutate(
-      data,
+      sanitizedData,
       {
         onSuccess: () => {
           toast.success('Account created successfully! Please login.');
@@ -75,7 +78,7 @@ export default function Register() {
                 type="submit"
                 variant="primary"
                 className="w-full"
-                disabled={registerMutation.isPending}
+                disabled={!isValid || registerMutation.isPending}
               >
                 {registerMutation.isPending ? 'Creating account...' : 'Create account'}
               </Button>
